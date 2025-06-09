@@ -1,0 +1,29 @@
+[project]
+name = "strava-visualizer"
+version = "0.1.0"
+description = "A template for Python projects"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [ { name = "Giovanni Giacometti", email = "giovanni.giacometti5@gmail.com" } ]
+requires-python = ">=3.12"
+dependencies = [
+    "altair>=5.5.0",
+    "ipykernel>=6.29.5",
+    "loguru>=0.7.3",
+    "marimo>=0.12.0",
+    "matplotlib>=3.10.3",
+    "pandas>=2.2.3",
+    "plotly>=6.0.1",
+    "polars>=1.26.0",
+    "polyline>=2.0.2",
+    "python-dotenv>=1.1.0",
+    "strava-client>=1.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.15.0",
+    "pre-commit>=4.1.0",
+    "pytest>=8.3.4",
+    "ruff>=0.9.5",
+]
