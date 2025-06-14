@@ -18,13 +18,9 @@ dependencies = [
     "polyline>=2.0.2",
     "python-dotenv>=1.1.0",
     "strava-client>=1.0.2",
-    "typing-extensions==4.11.0",
 ]
 
 [dependency-groups]
 dev = [
-    "mypy>=1.15.0",
-    "pre-commit>=4.1.0",
-    "pytest>=8.3.4",
     "ruff>=0.9.5",
 ]
