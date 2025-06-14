@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.13.6"
+__generated_with = "0.13.15"
 app = marimo.App(width="full")
 
 
@@ -8,7 +8,7 @@ app = marimo.App(width="full")
 def _(mo):
     mo.md(
         r"""
-    # Strava Visualizer 🏃‍♀️‍➡️​🏃‍➡️​!
+    # Strava Activity Analyzer 🏃‍♀️‍➡️​🏃‍➡️​!
 
     Visualize your progress 📈 and get insights on your activities 📋!
 
@@ -127,7 +127,7 @@ def _(
     mo.vstack(
         [
             mo.md("""Click on individual cells of the heatmap or click and drag to select multiple cells at once. 👆
-        
+
         The plots below will update themselves to include only the selected activities 👇"""),
             mo.ui.tabs(
                 {
@@ -150,10 +150,10 @@ def _(
     fetch_activity_stream,
     get_mt_km_speed,
     get_mt_km_speed_float,
-    go,
     mo,
     np,
     pl,
+    plotly,
     px,
 ):
     def activity_focus():
@@ -165,7 +165,7 @@ def _(
                 ]
             )
 
-        fig = go.Figure()
+        fig = plotly.graph_objects.Figure()
 
         selected_activities = displayed_activities.filter(
             pl.col("start_date_str").is_in(dropdown_activities.value)
@@ -209,7 +209,7 @@ def _(
             ].item()
 
             fig.add_trace(
-                go.Scatter(
+                plotly.graph_objects.Scatter(
                     x=df["Distance"],
                     y=df["Velocity"],
                     mode="lines",
@@ -513,7 +513,10 @@ def _(alt, days, mo, pl):
 def _(displayed_activities, mo):
     _options = displayed_activities["start_date_str"].to_list()
     dropdown_activities = mo.ui.multiselect(
-        options=_options, label="Select activity", value=_options[:1]
+        options=_options,
+        label="Select activity",
+        value=_options[:1],
+        max_selections=10,
     )
     return (dropdown_activities,)
 
@@ -701,12 +704,12 @@ def _():
 
 
 @app.cell
-def _(StravaClient, StravaScope):
-    client = StravaClient(
+def _(s_client, strava_client):
+    client = s_client.StravaClient(
         scopes=[
-            StravaScope.READ,
-            StravaScope.ACTIVITY_READ,
-            StravaScope.ACTIVITY_READ_ALL,
+            strava_client.enums.auth.StravaScope.READ,
+            strava_client.enums.auth.StravaScope.ACTIVITY_READ,
+            strava_client.enums.auth.StravaScope.ACTIVITY_READ_ALL,
         ]
     )
     return (client,)
@@ -714,34 +717,41 @@ def _(StravaClient, StravaScope):
 
 @app.cell
 def _():
-    import marimo as mo
-    from strava_client.client import StravaClient
-    from strava_client.enums.auth import StravaScope
-    import polars as pl
     import altair as alt
     import datetime
     import pandas as pd
     import math
     import numpy as np
-    import matplotlib.pyplot as plt
-    import plotly.express as px
-    import plotly.graph_objects as go
     from dotenv import load_dotenv
 
     _ = load_dotenv()
-    return (
-        StravaClient,
-        StravaScope,
-        alt,
-        datetime,
-        go,
-        math,
-        mo,
-        np,
-        pd,
-        pl,
-        px,
-    )
+    return alt, datetime, math, np, pd
+
+
+@app.cell
+async def _(micropip):
+    await micropip.install("plotly")
+    await micropip.install("strava-client")
+    await micropip.install("polars")
+
+    import strava_client
+    from strava_client import client as s_client
+    import plotly
+    import plotly.express as px
+    import polars as pl
+    return pl, plotly, px, s_client, strava_client
+
+
+@app.cell
+def _():
+    import micropip
+    return (micropip,)
+
+
+@app.cell
+def _():
+    import marimo as mo
+    return (mo,)
 
 
 if __name__ == "__main__":
