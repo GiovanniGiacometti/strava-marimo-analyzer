@@ -722,9 +722,7 @@ def _():
     import pandas as pd
     import math
     import numpy as np
-    from dotenv import load_dotenv
 
-    _ = load_dotenv()
     return alt, datetime, math, np, pd
 
 
@@ -733,24 +731,32 @@ async def _(micropip):
     await micropip.install("plotly")
     await micropip.install("strava-client")
     await micropip.install("polars")
+    await micropip.install("python-dotenv")
 
     import strava_client
     from strava_client import client as s_client
     import plotly
     import plotly.express as px
     import polars as pl
+
+    from dotenv import load_dotenv
+
+    _ = load_dotenv()
+
     return pl, plotly, px, s_client, strava_client
 
 
 @app.cell
 def _():
     import micropip
+
     return (micropip,)
 
 
 @app.cell
 def _():
     import marimo as mo
+
     return (mo,)
 
 
