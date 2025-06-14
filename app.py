@@ -729,7 +729,7 @@ def _():
 @app.cell
 async def _(micropip):
     await micropip.install("plotly")
-    await micropip.install("strava-client==1.0.2")
+    await micropip.install("strava-client==1.0.3")
     await micropip.install("polars==1.30.0")
     await micropip.install("python-dotenv")
 

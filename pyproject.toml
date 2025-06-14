@@ -17,7 +17,7 @@ dependencies = [
     "polars>=1.26.0",
     "polyline>=2.0.2",
     "python-dotenv>=1.1.0",
-    "strava-client>=1.0.2",
+    "strava-client>=1.0.3",
     "typing-extensions==4.11.0"
 ]
 

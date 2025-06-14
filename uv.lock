@@ -1290,16 +1290,17 @@ wheels = [
 
 [[package]]
 name = "strava-client"
-version = "1.0.2"
+version = "1.0.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "requests" },
+    { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9e/9a/7d9b4a298e9a43471fcc71d98b8d715b60fd5b374b209c13c4095e84b52a/strava_client-1.0.2.tar.gz", hash = "sha256:91971d808671493cd0d27ba62cfbab2d1eb94f1e678fe0e0239cc924615af8a8", size = 25370, upload-time = "2025-06-14T14:59:13.476Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/dc/ce/9403cca115aa299691fb940aa6cbe9a78b78ecda9217e945ed38c2652fd4/strava_client-1.0.3.tar.gz", hash = "sha256:0044506706b7fc6d87cca9e7ae273a48212fa383ee0d680bd7a6f4564925b150", size = 25408, upload-time = "2025-06-14T17:31:32.233Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a0/dd/c82de51aaec881b86c0ae1683091609ec29ef774d92f8f23f6d344739075/strava_client-1.0.2-py3-none-any.whl", hash = "sha256:63fc0282075ea119622cf91c9e5f8dd5ff226ce218846269342ca14ad89a5855", size = 12401, upload-time = "2025-06-14T14:59:12.479Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/c5/096c66862a873590887fd3d5f9234297cbd3dfc76a30c3c8c3ac6cfbca8e/strava_client-1.0.3-py3-none-any.whl", hash = "sha256:6f3ba27033c3570da8ac9de7c3436eec16cc4dee14b6adbb5f7a894f8bc05355", size = 12419, upload-time = "2025-06-14T17:31:31.238Z" },
 ]
 
 [[package]]
@@ -1338,7 +1339,7 @@ requires-dist = [
     { name = "polars", specifier = ">=1.26.0" },
     { name = "polyline", specifier = ">=2.0.2" },
     { name = "python-dotenv", specifier = ">=1.1.0" },
-    { name = "strava-client", specifier = ">=1.0.2" },
+    { name = "strava-client", specifier = ">=1.0.3" },
     { name = "typing-extensions", specifier = "==4.11.0" },
 ]
 
