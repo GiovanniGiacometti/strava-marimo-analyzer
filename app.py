@@ -730,7 +730,9 @@ def _():
 async def _(micropip):
     await micropip.install("plotly")
     await micropip.install("python-dotenv")
-    await micropip.install("strava-client==1.0.3", pre=True, deps=True)
+
+    await micropip.uninstall("typing-extensions", verbose=True)
+    await micropip.install("strava-client==1.0.3", verbose=True)
 
     import strava_client
     from strava_client import client as s_client
