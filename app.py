@@ -729,9 +729,9 @@ def _():
 @app.cell
 async def _(micropip):
     packages = [
-        "typing-extensions>=4.12.0",
+        # "typing-extensions>=4.12.0",
         "plotly",
-        "strava-client",
+        # "strava-client",
         "polars",
         "python-dotenv",
     ]
