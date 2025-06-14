@@ -729,9 +729,8 @@ def _():
 @app.cell
 async def _(micropip):
     await micropip.install("plotly")
-    await micropip.install("strava-client==1.0.3")
-    await micropip.install("polars==1.30.0")
     await micropip.install("python-dotenv")
+    await micropip.install("strava-client==1.0.3", pre=True, deps=True)
 
     import strava_client
     from strava_client import client as s_client
