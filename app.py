@@ -728,11 +728,15 @@ def _():
 
 @app.cell
 async def _(micropip):
-    await micropip.install("typing-extensions")
-    await micropip.install("plotly")
-    await micropip.install("strava-client")
-    await micropip.install("polars")
-    await micropip.install("python-dotenv")
+    packages = [
+        "typing-extensions>=4.12.0",
+        "plotly",
+        "strava-client",
+        "polars",
+        "python-dotenv",
+    ]
+
+    await micropip.install(packages)
 
     import strava_client
     from strava_client import client as s_client
