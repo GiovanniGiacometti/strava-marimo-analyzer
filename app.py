@@ -728,6 +728,7 @@ def _():
 
 @app.cell
 async def _(micropip):
+    await micropip.install("typing-extensions")
     await micropip.install("plotly")
     await micropip.install("strava-client")
     await micropip.install("polars")
