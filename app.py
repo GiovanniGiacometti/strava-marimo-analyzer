@@ -1,7 +1,7 @@
 import marimo
 
 __generated_with = "0.13.15"
-app = marimo.App(width="full")
+app = marimo.App(width="medium", app_title="Strava Activity Analyzer")
 
 
 @app.cell
@@ -20,6 +20,124 @@ def _(mo):
     """
     )
     return
+
+
+@app.cell
+def _(mo, sys, validate_form):
+    can_instantiate_client = False
+    local = False
+
+    # NOT running in wasm, see https://github.com/marimo-team/marimo/issues/3194#issuecomment-2557397627
+    if "pyodide" not in sys.modules:
+        # We assume information are given through a .env file or through the default
+        # settings file
+        can_instantiate_client = True
+        local = True
+        form = None
+
+    else:
+        # We ask the credentials, put them into a StravaSettings object and create the client
+        # accordingly
+
+        can_instantiate_client = True
+        local = False
+
+        client_id_text = mo.ui.text(
+            placeholder="Client ID...", label="Client ID", full_width=True
+        )
+        client_secret_text = mo.ui.text(
+            placeholder="Client Secret...", label="Client Secret", full_width=True
+        )
+        access_token_text = mo.ui.text(
+            placeholder="Access Token...", label="Access Token", full_width=True
+        )
+        refresh_token_text = mo.ui.text(
+            placeholder="You might not have it yet, leave it blank in case",
+            label="Refresh Token",
+            full_width=True,
+        )
+
+        md = mo.md("""Insert these information to get the dashboard running with your data! 
+    
+        For more information, check out the [strava-client](https://github.com/GiovanniGiacometti/strava-client) documentation to know more about
+        what each piece of information means!
+    
+        > Don't worry, the data you insert here will never leave your browser!
+    
+        {client_id}
+
+        {client_secret}
+
+        {access_token}
+    
+        {refresh_token}
+
+        """)
+    
+        form = md.batch(
+            client_id=client_id_text,
+            client_secret=client_secret_text,
+            access_token=access_token_text,
+            refresh_token=refresh_token_text,
+        ).form(validate=validate_form)
+
+    form
+    return can_instantiate_client, form, local
+
+
+@app.cell
+def _(strava_client):
+    def validate_form(form_value) -> str | None:
+
+        try:
+            strava_client.models.settings.StravaSettings.model_validate(form_value)
+        except Exception as e:
+            return str(e)
+    return (validate_form,)
+
+
+@app.cell
+async def _(can_instantiate_client, form, local, mo, s_client, strava_client):
+    mo.stop(not can_instantiate_client)
+
+    scopes = [
+        strava_client.enums.auth.StravaScope.READ,
+        strava_client.enums.auth.StravaScope.ACTIVITY_READ,
+        strava_client.enums.auth.StravaScope.ACTIVITY_READ_ALL,
+    ]
+
+    _call = None
+
+    if local:
+        client = s_client.StravaClient(scopes=scopes)
+
+    else:
+        mo.stop(form.value is None)
+
+        import asyncio
+
+        with mo.status.spinner(title="Loading...") as _spinner:
+            _spinner.update("Instantiating client..")
+            await asyncio.sleep(0.1)
+            settings = strava_client.models.settings.StravaSettings.model_validate(
+                form.value
+            )
+            client = s_client.StravaClient(
+                scopes=scopes, settings=settings, dump_settings=False
+            )
+    
+            # Make a small call to understand if values are correct
+            try:
+                client.get_activities(page=1, per_page=1)
+                _spinner.update("Done!")
+            except Exception as e:
+                # TODO: decide how to handle this with the exception
+                _call = mo.callout(f"""Something is wrong. Please check the information provided. 
+            
+                Exception: {e}""", kind="danger")
+
+    _call
+    return (client,)
 
 
 @app.cell(hide_code=True)
@@ -132,7 +250,9 @@ def _(
             mo.ui.tabs(
                 {
                     "::lucide:focus:: Activity Focus": activity_focus(),
-                    "::lucide:wind:: Speed": bar_chart_speed(_df=displayed_activities),
+                    "::lucide:wind:: Speed": bar_chart_speed(
+                        _df=displayed_activities
+                    ),
                     "::lucide:land-plot:: Distance": bar_chart_distance(
                         _df=displayed_activities,
                     ),
@@ -175,13 +295,17 @@ def _(
         max_velocity = None
 
         for i, _id in enumerate(selected_activities["id"].to_list()):
-            stream = fetch_activity_stream(activity_id=_id, keys=["velocity_smooth"])
+            stream = fetch_activity_stream(
+                activity_id=_id, keys=["velocity_smooth"]
+            )
 
             # Sample every 3rd point to increase smoothness
             df = pl.DataFrame(
                 {
                     "Distance": list(
-                        map(lambda x: round(x / 1000, 2), stream.distance.data[::3])
+                        map(
+                            lambda x: round(x / 1000, 2), stream.distance.data[::3]
+                        )
                     ),
                     "Velocity (minkm)": list(
                         map(get_mt_km_speed, stream.velocity_smooth.data[::3])
@@ -271,7 +395,9 @@ def _(
 
         # Create custom tick positions and labels
         velocity_ticks = np.arange(int(min_velocity), int(max_velocity) + 1, 0.25)
-        velocity_labels = [f"{get_mt_km_speed_float(v):.2f}" for v in velocity_ticks]
+        velocity_labels = [
+            f"{get_mt_km_speed_float(v):.2f}" for v in velocity_ticks
+        ]
 
         fig.update_layout(
             yaxis=dict(
@@ -291,7 +417,6 @@ def _(
                 mo.ui.plotly(fig),
             ]
         )
-
     return (activity_focus,)
 
 
@@ -346,15 +471,20 @@ def _(alt, get_mt_km_speed, mo, pl):
                 x=alt.X(
                     "range:O",
                     title="Speed (min/km)",
-                    axis=alt.Axis(labelAngle=0, labelFontSize=12, titleFontSize=15),
+                    axis=alt.Axis(
+                        labelAngle=0, labelFontSize=12, titleFontSize=15
+                    ),
                 ),
                 y=alt.Y(
                     "count",
                     title="Counts",
-                    axis=alt.Axis(titleFontSize=15, labelAngle=0, labelFontSize=12),
+                    axis=alt.Axis(
+                        titleFontSize=15, labelAngle=0, labelFontSize=12
+                    ),
                 ),
             )
         )
+
 
     def bar_chart_distance(_df):
         if _df.height == 1:
@@ -397,16 +527,19 @@ def _(alt, get_mt_km_speed, mo, pl):
                     "range:O",
                     title="Distance (km)",
                     sort=None,  # prevent sorting otherwise "9" > "1"
-                    axis=alt.Axis(labelAngle=0, labelFontSize=12, titleFontSize=15),
+                    axis=alt.Axis(
+                        labelAngle=0, labelFontSize=12, titleFontSize=15
+                    ),
                 ),
                 y=alt.Y(
                     "count",
                     title="Counts",
-                    axis=alt.Axis(titleFontSize=15, labelAngle=0, labelFontSize=12),
+                    axis=alt.Axis(
+                        titleFontSize=15, labelAngle=0, labelFontSize=12
+                    ),
                 ),
             )
         )
-
     return bar_chart_distance, bar_chart_speed
 
 
@@ -434,15 +567,20 @@ def _(alt, days, mo, pl):
                     f"{_column_name}:Q",
                     bin=True,
                     title=f"{_display_name.capitalize()} ({_unit_measure})",
-                    axis=alt.Axis(labelAngle=0, labelFontSize=12, titleFontSize=15),
+                    axis=alt.Axis(
+                        labelAngle=0, labelFontSize=12, titleFontSize=15
+                    ),
                 ),
                 y=alt.Y(
                     "count()",
                     title="Counts",
-                    axis=alt.Axis(titleFontSize=15, labelAngle=0, labelFontSize=12),
+                    axis=alt.Axis(
+                        titleFontSize=15, labelAngle=0, labelFontSize=12
+                    ),
                 ),
             )
         )
+
 
     def heatmap_chart(_df):
         # 1. Add day, week and year columns
@@ -505,7 +643,6 @@ def _(alt, days, mo, pl):
         )
 
         return mo.ui.altair_chart(chart=altair_chart, chart_selection=True)
-
     return (heatmap_chart,)
 
 
@@ -530,6 +667,7 @@ def _(math):
         # https://stackoverflow.com/questions/2189800/how-to-find-length-of-digits-in-an-integer
         return int(math.log10(_n)) + 1
 
+
     def get_nice_duration(_seconds):
         secs = int(_seconds)
 
@@ -543,15 +681,18 @@ def _(math):
 
         return f"{hours}:{minutes}:{seconds}"
 
+
     def get_column_sum(_df, _column_name):
         if _df.height == 0:
             return 0.0
         return _df[_column_name].sum()
 
+
     def get_average_column(_df, _column_name):
         if _df.height == 0:
             return 0.0
         return _df[_column_name].mean()
+
 
     def _from_mt_s_to_min_km(v) -> tuple[int, int]:
         if v == 0:
@@ -564,6 +705,7 @@ def _(math):
 
         return min_per_km_min, min_per_km_secs
 
+
     def get_mt_km_speed(v) -> str:
         mins, secs = _from_mt_s_to_min_km(v)
 
@@ -572,6 +714,7 @@ def _(math):
 
         return f"{mins}:{secs}"
 
+
     def get_mt_km_speed_float(v) -> str:
         mins, secs = _from_mt_s_to_min_km(v)
 
@@ -579,6 +722,7 @@ def _(math):
         secs = int(secs) if _get_n_digits(secs) >= 2 else f"0{int(secs)}"
 
         return float(f"{mins}.{secs}")
+
 
     def get_average_speed(_df):
         if _df.height == 0:
@@ -594,7 +738,6 @@ def _(math):
         secs = int(secs) if _get_n_digits(secs) >= 2 else f"0{int(secs)}"
 
         return f"{mins}:{secs}"
-
     return (
         get_average_column,
         get_average_speed,
@@ -639,7 +782,6 @@ def _(client, mo):
         )
 
         return streams
-
     return (fetch_activity_stream,)
 
 
@@ -659,6 +801,7 @@ def _(client, mo):
             activities.extend(page_activities)
 
         return activities
+
 
     activities = _fetch_activities()
     return (activities,)
@@ -704,35 +847,20 @@ def _():
 
 
 @app.cell
-def _(s_client, strava_client):
-    client = s_client.StravaClient(
-        scopes=[
-            strava_client.enums.auth.StravaScope.READ,
-            strava_client.enums.auth.StravaScope.ACTIVITY_READ,
-            strava_client.enums.auth.StravaScope.ACTIVITY_READ_ALL,
-        ]
-    )
-    return (client,)
+async def _():
+    # =========================================================
+    # Necessary when running as a WASM notebook
 
+    import micropip
 
-@app.cell
-def _():
-    import altair as alt
-    import datetime
-    import pandas as pd
-    import math
-    import numpy as np
-
-    return alt, datetime, math, np, pd
-
-
-@app.cell
-async def _(micropip):
     await micropip.install("plotly")
     await micropip.install("python-dotenv")
 
+    # Workaround to make it work with micropip
     micropip.uninstall("typing-extensions", verbose=True)
     await micropip.install("strava-client==1.0.3", verbose=True)
+
+    # =========================================================
 
     import strava_client
     from strava_client import client as s_client
@@ -742,22 +870,32 @@ async def _(micropip):
 
     from dotenv import load_dotenv
 
+    import altair as alt
+    import datetime
+    import pandas as pd
+    import math
+    import numpy as np
+    import sys
+
     _ = load_dotenv()
-
-    return pl, plotly, px, s_client, strava_client
-
-
-@app.cell
-def _():
-    import micropip
-
-    return (micropip,)
+    return (
+        alt,
+        datetime,
+        math,
+        np,
+        pd,
+        pl,
+        plotly,
+        px,
+        s_client,
+        strava_client,
+        sys,
+    )
 
 
 @app.cell
 def _():
     import marimo as mo
-
     return (mo,)
 
 

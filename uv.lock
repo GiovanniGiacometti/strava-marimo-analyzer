@@ -518,19 +518,6 @@ wheels = [
 ]
 
 [[package]]
-name = "loguru"
-version = "0.7.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
-    { name = "win32-setctime", marker = "sys_platform == 'win32'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/3a/05/a1dae3dffd1116099471c643b8924f5aa6524411dc6c63fdae648c4f1aca/loguru-0.7.3.tar.gz", hash = "sha256:19480589e77d47b8d85b2c827ad95d49bf31b0dcde16593892eb51dd18706eb6", size = 63559, upload-time = "2024-12-06T11:20:56.608Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0c/29/0348de65b8cc732daa3e33e67806420b2ae89bdce2b04af740289c5c6c8c/loguru-0.7.3-py3-none-any.whl", hash = "sha256:31a33c10c8e1e10422bfd431aeb5d351c7cf7fa671e3c4df004162264b28220c", size = 61595, upload-time = "2024-12-06T11:20:54.538Z" },
-]
-
-[[package]]
 name = "loro"
 version = "1.5.1"
 source = { registry = "https://pypi.org/simple" }
@@ -895,15 +882,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/cb/e7/b88b973021be07b13d91b9301cc14392c994225ef5107a32a8ffd3fd6424/polars-1.30.0-cp39-abi3-manylinux_2_24_aarch64.whl", hash = "sha256:ffb3ef133454275d4254442257c5f71dd6e393ce365c97997dadeb6fa9d6d4b5", size = 33416871, upload-time = "2025-05-21T13:32:35.077Z" },
     { url = "https://files.pythonhosted.org/packages/dd/7c/d46d4381adeac537b8520b653dc30cb8b7edbf59883d71fbb989e9005de1/polars-1.30.0-cp39-abi3-win_amd64.whl", hash = "sha256:c26b633a9bd530c5fc09d317fca3bb3e16c772bd7df7549a9d8ec1934773cc5d", size = 36363630, upload-time = "2025-05-21T13:32:38.286Z" },
     { url = "https://files.pythonhosted.org/packages/fb/b5/5056d0c12aadb57390d0627492bef8b1abf3549474abb9ae0fd4e2bfa885/polars-1.30.0-cp39-abi3-win_arm64.whl", hash = "sha256:476f1bde65bc7b4d9f80af370645c2981b5798d67c151055e58534e89e96f2a8", size = 32643590, upload-time = "2025-05-21T13:32:42.107Z" },
-]
-
-[[package]]
-name = "polyline"
-version = "2.0.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/1d/2f/e6a437b785d951867882b9fba52a70b81fe8af778bbb4d96b6fb69630f72/polyline-2.0.2.tar.gz", hash = "sha256:10541e759c5fd51f746ee304e9af94744089a4055b6257b293b3afd1df64e369", size = 6400, upload-time = "2024-02-12T16:56:19.247Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d7/4f/fbf07370cbf98af0098de83a26625d29aaa0bf73ef7123b561459729f3e6/polyline-2.0.2-py3-none-any.whl", hash = "sha256:389655c893bdabf2863c6aaa49490cf83dcdcec86ae715f67044ee98be57bef5", size = 5970, upload-time = "2024-02-12T16:56:18.145Z" },
 ]
 
 [[package]]
@@ -1290,36 +1268,32 @@ wheels = [
 
 [[package]]
 name = "strava-client"
-version = "1.0.3"
+version = "1.0.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "requests" },
-    { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/dc/ce/9403cca115aa299691fb940aa6cbe9a78b78ecda9217e945ed38c2652fd4/strava_client-1.0.3.tar.gz", hash = "sha256:0044506706b7fc6d87cca9e7ae273a48212fa383ee0d680bd7a6f4564925b150", size = 25408, upload-time = "2025-06-14T17:31:32.233Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f2/c1/61e3f53e8fc71c92ae526dcc2a597ba3af9847ee5013cc8ed22650347e25/strava_client-1.0.5.tar.gz", hash = "sha256:227f064c72a43983192c9aa57cbd438c5650beec4fc83fd2469d0ca6910b2842", size = 27934, upload-time = "2025-06-18T21:42:58.332Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8c/c5/096c66862a873590887fd3d5f9234297cbd3dfc76a30c3c8c3ac6cfbca8e/strava_client-1.0.3-py3-none-any.whl", hash = "sha256:6f3ba27033c3570da8ac9de7c3436eec16cc4dee14b6adbb5f7a894f8bc05355", size = 12419, upload-time = "2025-06-14T17:31:31.238Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/60/57b3ca83c9f305e7da09e59156670b372ee0749b60ddadb4d34c4afdf897/strava_client-1.0.5-py3-none-any.whl", hash = "sha256:b5a7a64bc1d3984327d956f83e8ef15bc298ff38e7688dbebff3c9e9e0c9a22f", size = 12647, upload-time = "2025-06-18T21:42:57.321Z" },
 ]
 
 [[package]]
-name = "strava-visualizer"
+name = "strava-marimo-analyzer"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "altair" },
     { name = "ipykernel" },
-    { name = "loguru" },
     { name = "marimo" },
     { name = "matplotlib" },
     { name = "pandas" },
     { name = "plotly" },
     { name = "polars" },
-    { name = "polyline" },
     { name = "python-dotenv" },
     { name = "strava-client" },
-    { name = "typing-extensions" },
 ]
 
 [package.dev-dependencies]
@@ -1331,16 +1305,13 @@ dev = [
 requires-dist = [
     { name = "altair", specifier = ">=5.5.0" },
     { name = "ipykernel", specifier = ">=6.29.5" },
-    { name = "loguru", specifier = ">=0.7.3" },
     { name = "marimo", specifier = ">=0.12.0" },
     { name = "matplotlib", specifier = ">=3.10.3" },
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "plotly", specifier = ">=6.0.1" },
     { name = "polars", specifier = ">=1.26.0" },
-    { name = "polyline", specifier = ">=2.0.2" },
     { name = "python-dotenv", specifier = ">=1.1.0" },
-    { name = "strava-client", specifier = ">=1.0.3" },
-    { name = "typing-extensions", specifier = "==4.11.0" },
+    { name = "strava-client", specifier = ">=1.0.5" },
 ]
 
 [package.metadata.requires-dev]
@@ -1461,13 +1432,4 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/86/eb/20b6cdf273913d0ad05a6a14aed4b9a85591c18a987a3d47f20fa13dcc47/websockets-15.0.1-cp313-cp313-win32.whl", hash = "sha256:ba9e56e8ceeeedb2e080147ba85ffcd5cd0711b89576b83784d8605a7df455fa", size = 176393, upload-time = "2025-03-05T20:02:53.814Z" },
     { url = "https://files.pythonhosted.org/packages/1b/6c/c65773d6cab416a64d191d6ee8a8b1c68a09970ea6909d16965d26bfed1e/websockets-15.0.1-cp313-cp313-win_amd64.whl", hash = "sha256:e09473f095a819042ecb2ab9465aee615bd9c2028e4ef7d933600a8401c79561", size = 176837, upload-time = "2025-03-05T20:02:55.237Z" },
     { url = "https://files.pythonhosted.org/packages/fa/a8/5b41e0da817d64113292ab1f8247140aac61cbf6cfd085d6a0fa77f4984f/websockets-15.0.1-py3-none-any.whl", hash = "sha256:f7a866fbc1e97b5c617ee4116daaa09b722101d4a3c170c787450ba409f9736f", size = 169743, upload-time = "2025-03-05T20:03:39.41Z" },
-]
-
-[[package]]
-name = "win32-setctime"
-version = "1.2.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b3/8f/705086c9d734d3b663af0e9bb3d4de6578d08f46b1b101c2442fd9aecaa2/win32_setctime-1.2.0.tar.gz", hash = "sha256:ae1fdf948f5640aae05c511ade119313fb6a30d7eabe25fef9764dca5873c4c0", size = 4867, upload-time = "2024-12-07T15:28:28.314Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e1/07/c6fe3ad3e685340704d314d765b7912993bcb8dc198f0e7a89382d37974b/win32_setctime-1.2.0-py3-none-any.whl", hash = "sha256:95d644c4e708aba81dc3704a116d8cbc974d70b3bdb8be1d150e36be6e9d1390", size = 4083, upload-time = "2024-12-07T15:28:26.465Z" },
 ]
