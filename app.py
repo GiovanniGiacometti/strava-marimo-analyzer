@@ -73,7 +73,7 @@ def _(mo, sys, validate_form):
         {refresh_token}
 
         """)
-    
+
         form = md.batch(
             client_id=client_id_text,
             client_secret=client_secret_text,
@@ -88,11 +88,18 @@ def _(mo, sys, validate_form):
 @app.cell
 def _(strava_client):
     def validate_form(form_value) -> str | None:
+        new_form_value = {}
+
+        for k, v in form_value.items():
+            if v == "":
+                v = None
+            new_form_value[k] = v
 
         try:
-            strava_client.models.settings.StravaSettings.model_validate(form_value)
+            strava_client.models.settings.StravaSettings.model_validate(new_form_value)
         except Exception as e:
             return str(e)
+
     return (validate_form,)
 
 
@@ -119,22 +126,32 @@ async def _(can_instantiate_client, form, local, mo, s_client, strava_client):
         with mo.status.spinner(title="Loading...") as _spinner:
             _spinner.update("Instantiating client..")
             await asyncio.sleep(0.1)
+            new_form_value = {}
+
+            for k, v in form.value.items():
+                if v == "":
+                    v = None
+                new_form_value[k] = v
+
             settings = strava_client.models.settings.StravaSettings.model_validate(
-                form.value
+                new_form_value
             )
             client = s_client.StravaClient(
                 scopes=scopes, settings=settings, dump_settings=False
             )
-    
+
             # Make a small call to understand if values are correct
             try:
                 client.get_activities(page=1, per_page=1)
                 _spinner.update("Done!")
             except Exception as e:
                 # TODO: decide how to handle this with the exception
-                _call = mo.callout(f"""Something is wrong. Please check the information provided. 
+                _call = mo.callout(
+                    f"""Something is wrong. Please check the information provided. 
             
-                Exception: {e}""", kind="danger")
+                Exception: {e}""",
+                    kind="danger",
+                )
 
     _call
     return (client,)
@@ -250,9 +267,7 @@ def _(
             mo.ui.tabs(
                 {
                     "::lucide:focus:: Activity Focus": activity_focus(),
-                    "::lucide:wind:: Speed": bar_chart_speed(
-                        _df=displayed_activities
-                    ),
+                    "::lucide:wind:: Speed": bar_chart_speed(_df=displayed_activities),
                     "::lucide:land-plot:: Distance": bar_chart_distance(
                         _df=displayed_activities,
                     ),
@@ -295,17 +310,13 @@ def _(
         max_velocity = None
 
         for i, _id in enumerate(selected_activities["id"].to_list()):
-            stream = fetch_activity_stream(
-                activity_id=_id, keys=["velocity_smooth"]
-            )
+            stream = fetch_activity_stream(activity_id=_id, keys=["velocity_smooth"])
 
             # Sample every 3rd point to increase smoothness
             df = pl.DataFrame(
                 {
                     "Distance": list(
-                        map(
-                            lambda x: round(x / 1000, 2), stream.distance.data[::3]
-                        )
+                        map(lambda x: round(x / 1000, 2), stream.distance.data[::3])
                     ),
                     "Velocity (minkm)": list(
                         map(get_mt_km_speed, stream.velocity_smooth.data[::3])
@@ -395,9 +406,7 @@ def _(
 
         # Create custom tick positions and labels
         velocity_ticks = np.arange(int(min_velocity), int(max_velocity) + 1, 0.25)
-        velocity_labels = [
-            f"{get_mt_km_speed_float(v):.2f}" for v in velocity_ticks
-        ]
+        velocity_labels = [f"{get_mt_km_speed_float(v):.2f}" for v in velocity_ticks]
 
         fig.update_layout(
             yaxis=dict(
@@ -417,6 +426,7 @@ def _(
                 mo.ui.plotly(fig),
             ]
         )
+
     return (activity_focus,)
 
 
@@ -471,20 +481,15 @@ def _(alt, get_mt_km_speed, mo, pl):
                 x=alt.X(
                     "range:O",
                     title="Speed (min/km)",
-                    axis=alt.Axis(
-                        labelAngle=0, labelFontSize=12, titleFontSize=15
-                    ),
+                    axis=alt.Axis(labelAngle=0, labelFontSize=12, titleFontSize=15),
                 ),
                 y=alt.Y(
                     "count",
                     title="Counts",
-                    axis=alt.Axis(
-                        titleFontSize=15, labelAngle=0, labelFontSize=12
-                    ),
+                    axis=alt.Axis(titleFontSize=15, labelAngle=0, labelFontSize=12),
                 ),
             )
         )
-
 
     def bar_chart_distance(_df):
         if _df.height == 1:
@@ -527,19 +532,16 @@ def _(alt, get_mt_km_speed, mo, pl):
                     "range:O",
                     title="Distance (km)",
                     sort=None,  # prevent sorting otherwise "9" > "1"
-                    axis=alt.Axis(
-                        labelAngle=0, labelFontSize=12, titleFontSize=15
-                    ),
+                    axis=alt.Axis(labelAngle=0, labelFontSize=12, titleFontSize=15),
                 ),
                 y=alt.Y(
                     "count",
                     title="Counts",
-                    axis=alt.Axis(
-                        titleFontSize=15, labelAngle=0, labelFontSize=12
-                    ),
+                    axis=alt.Axis(titleFontSize=15, labelAngle=0, labelFontSize=12),
                 ),
             )
         )
+
     return bar_chart_distance, bar_chart_speed
 
 
@@ -567,20 +569,15 @@ def _(alt, days, mo, pl):
                     f"{_column_name}:Q",
                     bin=True,
                     title=f"{_display_name.capitalize()} ({_unit_measure})",
-                    axis=alt.Axis(
-                        labelAngle=0, labelFontSize=12, titleFontSize=15
-                    ),
+                    axis=alt.Axis(labelAngle=0, labelFontSize=12, titleFontSize=15),
                 ),
                 y=alt.Y(
                     "count()",
                     title="Counts",
-                    axis=alt.Axis(
-                        titleFontSize=15, labelAngle=0, labelFontSize=12
-                    ),
+                    axis=alt.Axis(titleFontSize=15, labelAngle=0, labelFontSize=12),
                 ),
             )
         )
-
 
     def heatmap_chart(_df):
         # 1. Add day, week and year columns
@@ -643,6 +640,7 @@ def _(alt, days, mo, pl):
         )
 
         return mo.ui.altair_chart(chart=altair_chart, chart_selection=True)
+
     return (heatmap_chart,)
 
 
@@ -667,7 +665,6 @@ def _(math):
         # https://stackoverflow.com/questions/2189800/how-to-find-length-of-digits-in-an-integer
         return int(math.log10(_n)) + 1
 
-
     def get_nice_duration(_seconds):
         secs = int(_seconds)
 
@@ -681,18 +678,15 @@ def _(math):
 
         return f"{hours}:{minutes}:{seconds}"
 
-
     def get_column_sum(_df, _column_name):
         if _df.height == 0:
             return 0.0
         return _df[_column_name].sum()
 
-
     def get_average_column(_df, _column_name):
         if _df.height == 0:
             return 0.0
         return _df[_column_name].mean()
-
 
     def _from_mt_s_to_min_km(v) -> tuple[int, int]:
         if v == 0:
@@ -705,7 +699,6 @@ def _(math):
 
         return min_per_km_min, min_per_km_secs
 
-
     def get_mt_km_speed(v) -> str:
         mins, secs = _from_mt_s_to_min_km(v)
 
@@ -714,7 +707,6 @@ def _(math):
 
         return f"{mins}:{secs}"
 
-
     def get_mt_km_speed_float(v) -> str:
         mins, secs = _from_mt_s_to_min_km(v)
 
@@ -722,7 +714,6 @@ def _(math):
         secs = int(secs) if _get_n_digits(secs) >= 2 else f"0{int(secs)}"
 
         return float(f"{mins}.{secs}")
-
 
     def get_average_speed(_df):
         if _df.height == 0:
@@ -738,6 +729,7 @@ def _(math):
         secs = int(secs) if _get_n_digits(secs) >= 2 else f"0{int(secs)}"
 
         return f"{mins}:{secs}"
+
     return (
         get_average_column,
         get_average_speed,
@@ -782,6 +774,7 @@ def _(client, mo):
         )
 
         return streams
+
     return (fetch_activity_stream,)
 
 
@@ -801,7 +794,6 @@ def _(client, mo):
             activities.extend(page_activities)
 
         return activities
-
 
     activities = _fetch_activities()
     return (activities,)
@@ -896,6 +888,7 @@ async def _():
 @app.cell
 def _():
     import marimo as mo
+
     return (mo,)
 
 
