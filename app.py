@@ -181,18 +181,55 @@ async def _(
 def _(client, mo):
     @mo.cache
     def _fetch_activities():
+
+        n_retries = 0
+
         with mo.status.spinner(title="Fetching activities...") as _spinner:
             _spinner.update("Fetching activities...")
+
             page = 1
             activities = []
 
             while True:
-                page_activities = client.get_activities(page=page, per_page=100)
+                if page > 30:  # Limit pages to avoid too many requests
+                    break
 
+                # Reset retry counter for each page
+                n_retries = 0
+                page_activities = None
+                
+                # Retry loop for current page
+                while n_retries <= 3:
+                    try:
+                        page_activities = client.get_activities(page=page, per_page=100)
+                        break  # Success - exit retry loop
+                        
+                    except Exception as e:
+                        n_retries += 1
+                        
+                        if n_retries > 3:
+                            break
+                        else:
+                            wait_time = 2 ** n_retries
+                            time.sleep(wait_time)
+                
+                # Check if we successfully got data for this page
+                if page_activities is None:
+                    page += 1
+                    continue
+                
+                # Check if page is empty (no more activities)
                 if not page_activities:
                     break
-                page += 1
+                
+                # Successfully got activities
                 activities.extend(page_activities)
+                
+                # Move to next page
+                page += 1
+                
+                # Small delay between successful requests
+                time.sleep(0.5)
 
             return activities
 
@@ -919,6 +956,7 @@ async def _():
     import plotly
     import plotly.express as px
     import polars as pl
+    import time
 
     from dotenv import load_dotenv
 
