@@ -12,7 +12,7 @@ def _(mo):
 
     Visualize your progress 📈 and get insights on your activities 📋!
 
-    ➡️ This application is powered by [marimo](https://github.com/marimo-team/marimo), [strava-client](https://github.com/GiovanniGiacometti/strava-client), [Polars](https://pola.rs/), [Altair](https://altair-viz.github.io/index.html) and [Plotly](https://plotly.com/).
+    ➡️ This application is powered by [`marimo`](https://github.com/marimo-team/marimo), [`strava-client`](https://github.com/GiovanniGiacometti/strava-client), [`polars`](https://pola.rs/), [`altair`](https://altair-viz.github.io/index.html) and [`plotly`](https://plotly.com/).
 
     ➡️ The authentication process is detailed [here](https://github.com/GiovanniGiacometti/strava-client?tab=readme-ov-file#authentication).
     
