@@ -886,12 +886,24 @@ def _(activities, pl):
 def _(client, mo):
     @mo.cache
     def fetch_activity_stream(activity_id: str, keys: list[str] | None = None):
-        streams = client.get_activity_stream(
-            id=activity_id,
-            keys=keys,
-        )
+        
+        n_retries = 0
 
+        while True:
+            try:
+                streams = client.get_activity_stream(
+                    id=activity_id,
+                    keys=keys,
+                )
+                break  # Success - exit retry loop
+                
+            except Exception as e:
+                n_retries += 1
+                if n_retries > 3:
+                    return []
+        
         return streams
+    
     return (fetch_activity_stream,)
 
 
