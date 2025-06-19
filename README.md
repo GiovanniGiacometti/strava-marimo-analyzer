@@ -1,4 +1,4 @@
-# Strava Marimo Analyzer 🏃‍♀️‍➡️​🏃‍➡️!
+# Strava Marimo Analyzer 🏃‍♀️‍➡️​🏃‍➡️
 
 A [Marimo](https://docs.marimo.io/) notebook for visualizing and analyzing your [Strava](https://strava.com/) activity data!
 
@@ -6,7 +6,7 @@ A [Marimo](https://docs.marimo.io/) notebook for visualizing and analyzing your 
 - [`strava-client`](https://github.com/GiovanniGiacometti/strava-client)
 - [`polars`](https://pola.rs/)
 - [`altair`](https://altair-viz.github.io/index.html)
-- [`plotly`](https://plotly.com/).
+- [`plotly`](https://plotly.com/)
 
 🌐 A web-based version, running entirely in your browser via WebAssembly (WASM), is available [here](https://giovannigiacometti.it/strava-marimo-analyzer/).
 
@@ -24,4 +24,4 @@ You can either provide your credentials through a .env file or set them directly
 
 ### If you are using the web-based WASM version
 
-you’ll need to manually enter your credentials into the form at the top of the notebook. Since the browser cannot perform the full authentication flow, you must retrieve the necessary information beforehand — for instance by using the `strava-client` locally. Note that this information is not stored in the browser, so you'll need to re-enter it each time you reload the page.
+You’ll need to manually enter your credentials into the form at the top of the notebook. Since the browser cannot perform the full authentication flow, you must retrieve the necessary information beforehand — for instance by using the `strava-client` locally. Note that this information is not stored in the browser, so you'll need to re-enter it each time you reload the page.

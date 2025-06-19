@@ -16,3 +16,4 @@ wheels/
 .env
 __marimo__
 wasm
+*.ipynb

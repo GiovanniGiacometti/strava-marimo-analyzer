@@ -15,7 +15,7 @@ def _(mo):
     ➡️ This application is powered by [`marimo`](https://github.com/marimo-team/marimo), [`strava-client`](https://github.com/GiovanniGiacometti/strava-client), [`polars`](https://pola.rs/), [`altair`](https://altair-viz.github.io/index.html) and [`plotly`](https://plotly.com/).
 
     ➡️ The authentication process is detailed [here](https://github.com/GiovanniGiacometti/strava-client?tab=readme-ov-file#authentication).
-    
+
     ➡️ Code is available [here](https://github.com/GiovanniGiacometti/strava-marimo-analyzer).
 
     ---
@@ -110,7 +110,7 @@ def _(datetime, strava_client):
 
         if errors:
             return ", ".join(errors)
-    
+
         try:
             strava_client.models.settings.StravaSettings.model_validate(
                 sanitize_form(form_value)
@@ -178,7 +178,7 @@ async def _(
 
 
 @app.cell
-def _(client, mo):
+def _(client, mo, time):
     @mo.cache
     def _fetch_activities():
 
@@ -197,37 +197,37 @@ def _(client, mo):
                 # Reset retry counter for each page
                 n_retries = 0
                 page_activities = None
-                
+
                 # Retry loop for current page
                 while n_retries <= 3:
                     try:
                         page_activities = client.get_activities(page=page, per_page=100)
                         break  # Success - exit retry loop
-                        
+
                     except Exception as e:
                         n_retries += 1
-                        
+
                         if n_retries > 3:
                             break
                         else:
                             wait_time = 2 ** n_retries
                             time.sleep(wait_time)
-                
+
                 # Check if we successfully got data for this page
                 if page_activities is None:
                     page += 1
                     continue
-                
+
                 # Check if page is empty (no more activities)
                 if not page_activities:
                     break
-                
+
                 # Successfully got activities
                 activities.extend(page_activities)
-                
+
                 # Move to next page
                 page += 1
-                
+
                 # Small delay between successful requests
                 time.sleep(0.5)
 
@@ -350,12 +350,12 @@ def _(
         Available plots 👇
 
         ⏩ **Activity Focus**: explore the speed progression of your selected activities. Compare multiple ones side by side — a feature even Strava doesn’t offer! 😎
-    
+
         📊 **Speed**: see how your activity speeds are distributed.
-    
+
         📏 **Distance**: view the distance distribution across your selected activities.
-    
-    
+
+
         """),
             mo.ui.tabs(
                 {
@@ -370,6 +370,30 @@ def _(
             ),
         ]
     )
+    return
+
+
+@app.cell
+def _(activities, fetch_activity_stream):
+    fetch_activity_stream(
+                activity_id=activities[0].id, keys=["velocity_smooth"]
+            )
+    return
+
+
+@app.cell
+def _(activities, fetch_activity_stream):
+    import json
+
+    with open("a.json", "w") as f:
+        f.write(
+            json.dumps(
+                fetch_activity_stream(
+                activity_id=activities[0].id, keys=["velocity_smooth"]
+            ).model_dump_json(),
+                indent=2,
+            )
+        )
     return
 
 
@@ -886,7 +910,7 @@ def _(activities, pl):
 def _(client, mo):
     @mo.cache
     def fetch_activity_stream(activity_id: str, keys: list[str] | None = None):
-        
+
         n_retries = 0
 
         while True:
@@ -896,14 +920,14 @@ def _(client, mo):
                     keys=keys,
                 )
                 break  # Success - exit retry loop
-                
+
             except Exception as e:
                 n_retries += 1
                 if n_retries > 3:
                     return []
-        
+
         return streams
-    
+
     return (fetch_activity_stream,)
 
 
@@ -992,6 +1016,7 @@ async def _():
         s_client,
         strava_client,
         sys,
+        time,
     )
 
 
