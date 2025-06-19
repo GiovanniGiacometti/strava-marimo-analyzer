@@ -12,11 +12,11 @@ def _(mo):
 
     Visualize your progress 📈 and get insights on your activities 📋!
 
-    ➡️ The authentication process is detailed [here](https://github.com/GiovanniGiacometti/strava-client?tab=readme-ov-file#-strava-application).
-
     ➡️ This application is powered by [marimo](https://github.com/marimo-team/marimo), [strava-client](https://github.com/GiovanniGiacometti/strava-client), [Polars](https://pola.rs/), [Altair](https://altair-viz.github.io/index.html) and [Plotly](https://plotly.com/).
 
-    ➡️ Code is available [here]("https://github.com/GiovanniGiacometti/strava-marimo-analyzer").
+    ➡️ The authentication process is detailed [here](https://github.com/GiovanniGiacometti/strava-client?tab=readme-ov-file#authentication).
+    
+    ➡️ Code is available [here](https://github.com/GiovanniGiacometti/strava-marimo-analyzer).
 
     ---
     """
@@ -54,7 +54,7 @@ def _(mo, sys, validate_form):
             placeholder="Access Token...", label="Access Token", full_width=True
         )
         refresh_token_text = mo.ui.text(
-            placeholder="You might not have it yet, leave it blank in case!",
+            placeholder="Refresh Token...",
             label="Refresh Token",
             full_width=True,
         )
@@ -65,8 +65,7 @@ def _(mo, sys, validate_form):
 
         > Your privacy matters! All data stays entirely in your browser and is never shared.
 
-        **Note**: If you don't provide an access token, the client will open up a new browser tab to authenticate you with Strava. Just follow 
-                   the instructions and copy the callback URL in the input field. Everything is explained in the library documentation linked above.
+        **Note**: You must already have obtained the information below by creating a Strava application and authorizing it to access your data. You can find detailed information on the process in the library documentation linked above.
 
         {client_id}
 
@@ -92,23 +91,26 @@ def _(mo, sys, validate_form):
 @app.cell
 def _(datetime, strava_client):
     def sanitize_form(form_value) -> dict[str | None, str | None]:
-        new_form_value = {}
 
-        for k, v in form_value.items():
-            if v == "":
-                v = None
-            new_form_value[k] = v
+        # insert a fake expires at so that the client refreshes the token
+        form_value["expires_at"] = int(
+            (datetime.datetime.now() - datetime.timedelta(hours=1)).timestamp()
+        )
 
-        if form_value["refresh_token"]:
-            # insert a fake expires at so that the client refreshes the token
-            new_form_value["expires_at"] = int(
-                (datetime.datetime.now() - datetime.timedelta(hours=1)).timestamp()
-            )
-
-        return new_form_value
+        return form_value
 
 
     def validate_form(form_value) -> str | None:
+
+        errors = []
+
+        for key, value in form_value.items():
+            if not value or value == "":
+                errors.append(f"{" ".join(key.split("_"))} is required")
+
+        if errors:
+            return ", ".join(errors)
+    
         try:
             strava_client.models.settings.StravaSettings.model_validate(
                 sanitize_form(form_value)
@@ -185,7 +187,7 @@ def _(client, mo):
             activities = []
 
             while True:
-                page_activities = client.get_activities(page=page, per_page=200)
+                page_activities = client.get_activities(page=page, per_page=100)
 
                 if not page_activities:
                     break
