@@ -25,17 +25,49 @@ def _(mo):
 
 
 @app.cell
-def _(mo, sys, validate_form):
+def _(mo):
+    use_mocked_data = mo.ui.switch(label="Use mocked data")
+    return (use_mocked_data,)
+
+
+@app.cell
+def _(mo):
+
+    md_initial = mo.md("""Fill in the required information to power up your personal dashboard! 🔥
+
+        For more details on each field, check out the [strava-client documentation](https://github.com/GiovanniGiacometti/strava-client).
+
+        > All data stays entirely in your browser and is never shared.
+
+        **Note**: You must already have obtained the information below by creating a Strava application and authorizing it to access your data. You can find detailed information on the process in the library documentation linked above.
+
+        {use_mocked_data}
+
+        {client_id}
+
+        {client_secret}
+
+        {access_token}
+
+        {refresh_token}
+
+        """
+    )
+    return (md_initial,)
+
+
+@app.cell
+def _(md_initial, mo, sys, use_mocked_data, validate_form):
     can_instantiate_client = False
     local = False
 
     # NOT running in wasm, see https://github.com/marimo-team/marimo/issues/3194#issuecomment-2557397627
-    if "pyodide" not in sys.modules:
+    if "pyodide" in sys.modules:
         # We assume information are given through a .env file or through the default
         # settings file
         can_instantiate_client = True
         local = True
-        form = None
+        starting_form = None
 
     else:
         # We ask the credentials, put them into a StravaSettings object and create the client
@@ -59,54 +91,39 @@ def _(mo, sys, validate_form):
             full_width=True,
         )
 
-        md = mo.md("""Fill in the required information to power up your personal dashboard! 🔥
-
-        For more details on each field, check out the [strava-client documentation](https://github.com/GiovanniGiacometti/strava-client).
-
-        > Your privacy matters! All data stays entirely in your browser and is never shared.
-
-        **Note**: You must already have obtained the information below by creating a Strava application and authorizing it to access your data. You can find detailed information on the process in the library documentation linked above.
-
-        {client_id}
-
-        {client_secret}
-
-        {access_token}
-
-        {refresh_token}
-
-        """)
-
-        form = md.batch(
+        starting_form = md_initial.batch(
             client_id=client_id_text,
             client_secret=client_secret_text,
             access_token=access_token_text,
             refresh_token=refresh_token_text,
+            use_mocked_data=use_mocked_data
         ).form(validate=validate_form)
 
-    form
-    return can_instantiate_client, form, local
+    starting_form
+    return can_instantiate_client, local, starting_form
 
 
 @app.cell
 def _(datetime, strava_client):
     def sanitize_form(form_value) -> dict[str | None, str | None]:
-
         # insert a fake expires at so that the client refreshes the token
         form_value["expires_at"] = int(
             (datetime.datetime.now() - datetime.timedelta(hours=1)).timestamp()
         )
 
+        form_value.remove("use_mocked_data")
+
         return form_value
 
 
     def validate_form(form_value) -> str | None:
-
+        if form_value["use_mocked_data"]: return
+    
         errors = []
 
         for key, value in form_value.items():
             if not value or value == "":
-                errors.append(f"{" ".join(key.split("_"))} is required")
+                errors.append(f"{' '.join(key.split('_'))} is required")
 
         if errors:
             return ", ".join(errors)
@@ -123,11 +140,11 @@ def _(datetime, strava_client):
 @app.cell
 async def _(
     can_instantiate_client,
-    form,
     local,
     mo,
     s_client,
     sanitize_form,
+    starting_form,
     strava_client,
 ):
     mo.stop(not can_instantiate_client)
@@ -140,48 +157,66 @@ async def _(
 
     _call = None
 
+    client_ready = False
+    load_mocked_activities = False
+
     if local:
         client = s_client.StravaClient(scopes=scopes)
+        client_ready = True
 
     else:
-        mo.stop(form.value is None)
+        mo.stop(starting_form.value is None)
 
         import asyncio
 
         with mo.status.spinner(title="Loading...") as _spinner:
-            _spinner.update("Instantiating client..")
 
-            await asyncio.sleep(0.1)
+            if starting_form.value.get("use_mocked_data", False):
+            
+                load_mocked_activities = True
 
-            settings = strava_client.models.settings.StravaSettings.model_validate(
-                sanitize_form(form.value)
-            )
-            client = s_client.StravaClient(
-                scopes=scopes, settings=settings, dump_settings=False
-            )
-
-            # Make a small call to understand if values are correct
-            try:
-                client.get_activities(page=1, per_page=1)
-                _spinner.update("Done!")
-            except Exception as e:
-                # TODO: decide how to handle this with the exception
-                _call = mo.callout(
-                    f"""Something is wrong. Please check the information provided. 
-
-                Exception: {e}""",
-                    kind="danger",
+            else:
+        
+                _spinner.update("Instantiating client..")
+    
+                await asyncio.sleep(0.1)
+    
+                settings = strava_client.models.settings.StravaSettings.model_validate(
+                    sanitize_form(starting_form.value)
                 )
+                client = s_client.StravaClient(
+                    scopes=scopes, settings=settings, dump_settings=False
+                )
+    
+                # Make a call to understand if values are correct
+                try:
+                    client.get_activities(page=1, per_page=1)
+                    _spinner.update("Done!")
+                    client_ready = True
+                except Exception as e:
+                    _call = mo.callout(
+                        f"""Something is wrong. Please check the information provided. 
+    
+                    Exception: {e}""",
+                        kind="danger",
+                    )
 
     _call
-    return (client,)
+    return client, client_ready, load_mocked_activities
 
 
 @app.cell
-def _(client, mo, time):
+def _(
+    client,
+    client_ready,
+    load_mocked_activities,
+    mo,
+    requests,
+    strava_client,
+    time,
+):
     @mo.cache
     def _fetch_activities():
-
         n_retries = 0
 
         with mo.status.spinner(title="Fetching activities...") as _spinner:
@@ -201,7 +236,9 @@ def _(client, mo, time):
                 # Retry loop for current page
                 while n_retries <= 3:
                     try:
-                        page_activities = client.get_activities(page=page, per_page=100)
+                        page_activities = client.get_activities(
+                            page=page, per_page=200
+                        )
                         break  # Success - exit retry loop
 
                     except Exception as e:
@@ -210,7 +247,7 @@ def _(client, mo, time):
                         if n_retries > 3:
                             break
                         else:
-                            wait_time = 2 ** n_retries
+                            wait_time = 2**n_retries
                             time.sleep(wait_time)
 
                 # Check if we successfully got data for this page
@@ -234,7 +271,48 @@ def _(client, mo, time):
             return activities
 
 
-    activities = _fetch_activities()
+    def _load_mocked_activities():
+
+        url = "https://raw.githubusercontent.com/GiovanniGiacometti/strava-marimo-analyzer/main/mocked_data/mocked_activity.json"
+
+        n_retries = 0
+
+        # Retry loop for current page
+        while n_retries <= 3:
+            try:
+                activities = requests.get(
+                    url
+                ).json()
+
+                activities = [
+                    strava_client.models.api.StravaActivity.model_validate_json(act) for act in activities
+                ]
+            
+                return activities  # Success - exit retry loop
+
+            except Exception as e:
+                n_retries += 1
+
+                if n_retries > 3:
+                    break
+                else:
+                    wait_time = 2**n_retries
+                    time.sleep(wait_time)
+
+    
+
+    # If mocked data should be loaded, we proceed. Otherwise, we
+    # wait for the client to be ready
+    mo.stop(not client_ready and not load_mocked_activities)
+
+    if load_mocked_activities:
+
+        activities = _load_mocked_activities()
+
+    else:
+
+        # This should be optimized to load only necessary activities
+        activities = _fetch_activities()
     return (activities,)
 
 
@@ -370,30 +448,6 @@ def _(
             ),
         ]
     )
-    return
-
-
-@app.cell
-def _(activities, fetch_activity_stream):
-    fetch_activity_stream(
-                activity_id=activities[0].id, keys=["velocity_smooth"]
-            )
-    return
-
-
-@app.cell
-def _(activities, fetch_activity_stream):
-    import json
-
-    with open("a.json", "w") as f:
-        f.write(
-            json.dumps(
-                fetch_activity_stream(
-                activity_id=activities[0].id, keys=["velocity_smooth"]
-            ).model_dump_json(),
-                indent=2,
-            )
-        )
     return
 
 
@@ -898,6 +952,18 @@ def _(get_end_date, get_start_date, pl, whole_df):
 
 
 @app.cell
+def _(activities):
+    activities[0]
+    return
+
+
+@app.cell
+def _(activities):
+    activities[0]
+    return
+
+
+@app.cell
 def _(activities, pl):
     whole_df = pl.DataFrame(activities)
 
@@ -910,7 +976,6 @@ def _(activities, pl):
 def _(client, mo):
     @mo.cache
     def fetch_activity_stream(activity_id: str, keys: list[str] | None = None):
-
         n_retries = 0
 
         while True:
@@ -927,7 +992,6 @@ def _(client, mo):
                     return []
 
         return streams
-
     return (fetch_activity_stream,)
 
 
@@ -1002,6 +1066,8 @@ async def _():
     import math
     import numpy as np
     import sys
+    import requests
+
 
     _ = load_dotenv()
     return (
@@ -1013,6 +1079,7 @@ async def _():
         pl,
         plotly,
         px,
+        requests,
         s_client,
         strava_client,
         sys,
