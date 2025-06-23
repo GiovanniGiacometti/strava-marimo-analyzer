@@ -54,7 +54,7 @@ def _(md_initial, mo, sys, use_mocked_data, validate_form):
     local = False
 
     # NOT running in wasm, see https://github.com/marimo-team/marimo/issues/3194#issuecomment-2557397627
-    if "pyodide" in sys.modules:
+    if "pyodide" not in sys.modules:
         # We assume information are given through a .env file or through the default
         # settings file
         can_instantiate_client = True
