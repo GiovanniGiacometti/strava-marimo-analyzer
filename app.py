@@ -26,13 +26,6 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    use_mocked_data = mo.ui.switch(label="Use mocked data")
-    return (use_mocked_data,)
-
-
-@app.cell
-def _(mo):
-
     md_initial = mo.md("""Fill in the required information to power up your personal dashboard! 🔥
 
         For more details on each field, check out the [strava-client documentation](https://github.com/GiovanniGiacometti/strava-client).
@@ -51,8 +44,7 @@ def _(mo):
 
         {refresh_token}
 
-        """
-    )
+        """)
     return (md_initial,)
 
 
@@ -96,7 +88,7 @@ def _(md_initial, mo, sys, use_mocked_data, validate_form):
             client_secret=client_secret_text,
             access_token=access_token_text,
             refresh_token=refresh_token_text,
-            use_mocked_data=use_mocked_data
+            use_mocked_data=use_mocked_data,
         ).form(validate=validate_form)
 
     starting_form
@@ -115,10 +107,10 @@ def _(datetime, strava_client):
 
         return form_value
 
-
     def validate_form(form_value) -> str | None:
-        if form_value["use_mocked_data"]: return
-    
+        if form_value["use_mocked_data"]:
+            return
+
         errors = []
 
         for key, value in form_value.items():
@@ -134,6 +126,7 @@ def _(datetime, strava_client):
             )
         except Exception as e:
             return str(e)
+
     return sanitize_form, validate_form
 
 
@@ -166,28 +159,24 @@ async def _(
 
     else:
         mo.stop(starting_form.value is None)
-
         import asyncio
 
         with mo.status.spinner(title="Loading...") as _spinner:
-
             if starting_form.value.get("use_mocked_data", False):
-            
                 load_mocked_activities = True
 
             else:
-        
                 _spinner.update("Instantiating client..")
-    
+
                 await asyncio.sleep(0.1)
-    
+
                 settings = strava_client.models.settings.StravaSettings.model_validate(
                     sanitize_form(starting_form.value)
                 )
                 client = s_client.StravaClient(
                     scopes=scopes, settings=settings, dump_settings=False
                 )
-    
+
                 # Make a call to understand if values are correct
                 try:
                     client.get_activities(page=1, per_page=1)
@@ -196,124 +185,13 @@ async def _(
                 except Exception as e:
                     _call = mo.callout(
                         f"""Something is wrong. Please check the information provided. 
-    
+
                     Exception: {e}""",
                         kind="danger",
                     )
 
     _call
     return client, client_ready, load_mocked_activities
-
-
-@app.cell
-def _(
-    client,
-    client_ready,
-    load_mocked_activities,
-    mo,
-    requests,
-    strava_client,
-    time,
-):
-    @mo.cache
-    def _fetch_activities():
-        n_retries = 0
-
-        with mo.status.spinner(title="Fetching activities...") as _spinner:
-            _spinner.update("Fetching activities...")
-
-            page = 1
-            activities = []
-
-            while True:
-                if page > 30:  # Limit pages to avoid too many requests
-                    break
-
-                # Reset retry counter for each page
-                n_retries = 0
-                page_activities = None
-
-                # Retry loop for current page
-                while n_retries <= 3:
-                    try:
-                        page_activities = client.get_activities(
-                            page=page, per_page=200
-                        )
-                        break  # Success - exit retry loop
-
-                    except Exception as e:
-                        n_retries += 1
-
-                        if n_retries > 3:
-                            break
-                        else:
-                            wait_time = 2**n_retries
-                            time.sleep(wait_time)
-
-                # Check if we successfully got data for this page
-                if page_activities is None:
-                    page += 1
-                    continue
-
-                # Check if page is empty (no more activities)
-                if not page_activities:
-                    break
-
-                # Successfully got activities
-                activities.extend(page_activities)
-
-                # Move to next page
-                page += 1
-
-                # Small delay between successful requests
-                time.sleep(0.5)
-
-            return activities
-
-
-    def _load_mocked_activities():
-
-        url = "https://raw.githubusercontent.com/GiovanniGiacometti/strava-marimo-analyzer/main/mocked_data/mocked_activity.json"
-
-        n_retries = 0
-
-        # Retry loop for current page
-        while n_retries <= 3:
-            try:
-                activities = requests.get(
-                    url
-                ).json()
-
-                activities = [
-                    strava_client.models.api.StravaActivity.model_validate_json(act) for act in activities
-                ]
-            
-                return activities  # Success - exit retry loop
-
-            except Exception as e:
-                n_retries += 1
-
-                if n_retries > 3:
-                    break
-                else:
-                    wait_time = 2**n_retries
-                    time.sleep(wait_time)
-
-    
-
-    # If mocked data should be loaded, we proceed. Otherwise, we
-    # wait for the client to be ready
-    mo.stop(not client_ready and not load_mocked_activities)
-
-    if load_mocked_activities:
-
-        activities = _load_mocked_activities()
-
-    else:
-
-        # This should be optimized to load only necessary activities
-        activities = _fetch_activities()
-    return (activities,)
 
 
 @app.cell(hide_code=True)
@@ -427,8 +305,8 @@ def _(
 
         Available plots 👇
 
-        ⏩ **Activity Focus**: explore the speed progression of your selected activities. Compare multiple ones side by side — a feature even Strava doesn’t offer! 😎
-
+        ⏩ **Activity Focus**: explore the speed progression of your selected activities. Compare multiple ones side by side|
+    
         📊 **Speed**: see how your activity speeds are distributed.
 
         📏 **Distance**: view the distance distribution across your selected activities.
@@ -438,9 +316,7 @@ def _(
             mo.ui.tabs(
                 {
                     "::lucide:focus:: Activity Focus": activity_focus(),
-                    "::lucide:wind:: Speed": bar_chart_speed(
-                        _df=displayed_activities
-                    ),
+                    "::lucide:wind:: Speed": bar_chart_speed(_df=displayed_activities),
                     "::lucide:land-plot:: Distance": bar_chart_distance(
                         _df=displayed_activities,
                     ),
@@ -456,13 +332,16 @@ def _(
     displayed_activities,
     dropdown_activities,
     fetch_activity_stream,
+    fetch_mocked_activity_stream,
     get_mt_km_speed,
     get_mt_km_speed_float,
+    load_mocked_activities,
     mo,
     np,
     pl,
     plotly,
     px,
+    strava_client,
 ):
     def activity_focus():
         if not dropdown_activities.value:
@@ -482,18 +361,34 @@ def _(
         min_velocity = None
         max_velocity = None
 
+        # preload mocked activites
+        if load_mocked_activities:
+            mocked_streams = fetch_mocked_activity_stream()
+
         for i, _id in enumerate(selected_activities["id"].to_list()):
-            stream = fetch_activity_stream(
-                activity_id=_id, keys=["velocity_smooth"]
-            )
+            if load_mocked_activities:
+                # a bit of an hack, data is not structured in the best way possible unfortunately
+                stream = (
+                    strava_client.models.api.StravaActivityStream.model_validate_json(
+                        list(
+                            next(
+                                stream
+                                for stream in mocked_streams
+                                if int(list(stream.keys())[0]) == _id
+                            ).values()
+                        )[0]
+                    )
+                )
+            else:
+                stream = fetch_activity_stream(
+                    activity_id=_id, keys=["velocity_smooth"]
+                )
 
             # Sample every 3rd point to increase smoothness
             df = pl.DataFrame(
                 {
                     "Distance": list(
-                        map(
-                            lambda x: round(x / 1000, 2), stream.distance.data[::3]
-                        )
+                        map(lambda x: round(x / 1000, 2), stream.distance.data[::3])
                     ),
                     "Velocity (minkm)": list(
                         map(get_mt_km_speed, stream.velocity_smooth.data[::3])
@@ -583,9 +478,7 @@ def _(
 
         # Create custom tick positions and labels
         velocity_ticks = np.arange(int(min_velocity), int(max_velocity) + 1, 0.25)
-        velocity_labels = [
-            f"{get_mt_km_speed_float(v):.2f}" for v in velocity_ticks
-        ]
+        velocity_labels = [f"{get_mt_km_speed_float(v):.2f}" for v in velocity_ticks]
 
         fig.update_layout(
             yaxis=dict(
@@ -605,6 +498,7 @@ def _(
                 mo.ui.plotly(fig),
             ]
         )
+
     return (activity_focus,)
 
 
@@ -659,20 +553,15 @@ def _(alt, get_mt_km_speed, mo, pl):
                 x=alt.X(
                     "range:O",
                     title="Speed (min/km)",
-                    axis=alt.Axis(
-                        labelAngle=0, labelFontSize=12, titleFontSize=15
-                    ),
+                    axis=alt.Axis(labelAngle=0, labelFontSize=12, titleFontSize=15),
                 ),
                 y=alt.Y(
                     "count",
                     title="Counts",
-                    axis=alt.Axis(
-                        titleFontSize=15, labelAngle=0, labelFontSize=12
-                    ),
+                    axis=alt.Axis(titleFontSize=15, labelAngle=0, labelFontSize=12),
                 ),
             )
         )
-
 
     def bar_chart_distance(_df):
         if _df.height == 1:
@@ -715,19 +604,16 @@ def _(alt, get_mt_km_speed, mo, pl):
                     "range:O",
                     title="Distance (km)",
                     sort=None,  # prevent sorting otherwise "9" > "1"
-                    axis=alt.Axis(
-                        labelAngle=0, labelFontSize=12, titleFontSize=15
-                    ),
+                    axis=alt.Axis(labelAngle=0, labelFontSize=12, titleFontSize=15),
                 ),
                 y=alt.Y(
                     "count",
                     title="Counts",
-                    axis=alt.Axis(
-                        titleFontSize=15, labelAngle=0, labelFontSize=12
-                    ),
+                    axis=alt.Axis(titleFontSize=15, labelAngle=0, labelFontSize=12),
                 ),
             )
         )
+
     return bar_chart_distance, bar_chart_speed
 
 
@@ -755,20 +641,15 @@ def _(alt, days, mo, pl):
                     f"{_column_name}:Q",
                     bin=True,
                     title=f"{_display_name.capitalize()} ({_unit_measure})",
-                    axis=alt.Axis(
-                        labelAngle=0, labelFontSize=12, titleFontSize=15
-                    ),
+                    axis=alt.Axis(labelAngle=0, labelFontSize=12, titleFontSize=15),
                 ),
                 y=alt.Y(
                     "count()",
                     title="Counts",
-                    axis=alt.Axis(
-                        titleFontSize=15, labelAngle=0, labelFontSize=12
-                    ),
+                    axis=alt.Axis(titleFontSize=15, labelAngle=0, labelFontSize=12),
                 ),
             )
         )
-
 
     def heatmap_chart(_df):
         # 1. Add day, week and year columns
@@ -831,6 +712,7 @@ def _(alt, days, mo, pl):
         )
 
         return mo.ui.altair_chart(chart=altair_chart, chart_selection=True)
+
     return (heatmap_chart,)
 
 
@@ -855,7 +737,6 @@ def _(math):
         # https://stackoverflow.com/questions/2189800/how-to-find-length-of-digits-in-an-integer
         return int(math.log10(_n)) + 1
 
-
     def get_nice_duration(_seconds):
         secs = int(_seconds)
 
@@ -869,18 +750,15 @@ def _(math):
 
         return f"{hours}:{minutes}:{seconds}"
 
-
     def get_column_sum(_df, _column_name):
         if _df.height == 0:
             return 0.0
         return _df[_column_name].sum()
 
-
     def get_average_column(_df, _column_name):
         if _df.height == 0:
             return 0.0
         return _df[_column_name].mean()
-
 
     def _from_mt_s_to_min_km(v) -> tuple[int, int]:
         if v == 0:
@@ -893,7 +771,6 @@ def _(math):
 
         return min_per_km_min, min_per_km_secs
 
-
     def get_mt_km_speed(v) -> str:
         mins, secs = _from_mt_s_to_min_km(v)
 
@@ -902,7 +779,6 @@ def _(math):
 
         return f"{mins}:{secs}"
 
-
     def get_mt_km_speed_float(v) -> str:
         mins, secs = _from_mt_s_to_min_km(v)
 
@@ -910,7 +786,6 @@ def _(math):
         secs = int(secs) if _get_n_digits(secs) >= 2 else f"0{int(secs)}"
 
         return float(f"{mins}.{secs}")
-
 
     def get_average_speed(_df):
         if _df.height == 0:
@@ -926,6 +801,7 @@ def _(math):
         secs = int(secs) if _get_n_digits(secs) >= 2 else f"0{int(secs)}"
 
         return f"{mins}:{secs}"
+
     return (
         get_average_column,
         get_average_speed,
@@ -952,18 +828,6 @@ def _(get_end_date, get_start_date, pl, whole_df):
 
 
 @app.cell
-def _(activities):
-    activities[0]
-    return
-
-
-@app.cell
-def _(activities):
-    activities[0]
-    return
-
-
-@app.cell
 def _(activities, pl):
     whole_df = pl.DataFrame(activities)
 
@@ -973,7 +837,8 @@ def _(activities, pl):
 
 
 @app.cell
-def _(client, mo):
+def _(client, mo, requests, time):
+    # === ACTIVITY STREAM FUNCTION ===
     @mo.cache
     def fetch_activity_stream(activity_id: str, keys: list[str] | None = None):
         n_retries = 0
@@ -992,11 +857,138 @@ def _(client, mo):
                     return []
 
         return streams
-    return (fetch_activity_stream,)
+
+    @mo.cache
+    def fetch_mocked_activity_stream():
+        url = "https://raw.githubusercontent.com/GiovanniGiacometti/strava-marimo-analyzer/main/mocked_data/mocked_streams.json"
+
+        n_retries = 0
+
+        # Retry loop for current page
+        while n_retries <= 3:
+            try:
+                return requests.get(url).json()
+
+            except Exception as e:
+                n_retries += 1
+
+                if n_retries > 3:
+                    raise
+                else:
+                    wait_time = 2**n_retries
+                    time.sleep(wait_time)
+
+    return fetch_activity_stream, fetch_mocked_activity_stream
+
+
+@app.cell
+def _(
+    client,
+    client_ready,
+    load_mocked_activities,
+    mo,
+    requests,
+    strava_client,
+    time,
+):
+    # === Activities ===
+
+    @mo.cache
+    def _fetch_activities():
+        n_retries = 0
+
+        with mo.status.spinner(title="Fetching activities...") as _spinner:
+            _spinner.update("Fetching activities...")
+
+            page = 1
+            activities = []
+
+            while True:
+                if page > 30:  # Limit pages to avoid too many requests
+                    break
+
+                # Reset retry counter for each page
+                n_retries = 0
+                page_activities = None
+
+                # Retry loop for current page
+                while n_retries <= 3:
+                    try:
+                        page_activities = client.get_activities(page=page, per_page=200)
+                        break  # Success - exit retry loop
+
+                    except Exception as e:
+                        n_retries += 1
+
+                        if n_retries > 3:
+                            break
+                        else:
+                            wait_time = 2**n_retries
+                            time.sleep(wait_time)
+
+                # Check if we successfully got data for this page
+                if page_activities is None:
+                    page += 1
+                    continue
+
+                # Check if page is empty (no more activities)
+                if not page_activities:
+                    break
+
+                # Successfully got activities
+                activities.extend(page_activities)
+
+                # Move to next page
+                page += 1
+
+                # Small delay between successful requests
+                time.sleep(0.5)
+
+            return activities
+
+    @mo.cache
+    def _load_mocked_activities():
+        url = "https://raw.githubusercontent.com/GiovanniGiacometti/strava-marimo-analyzer/main/mocked_data/mocked_activity.json"
+
+        n_retries = 0
+
+        # Retry loop for current page
+        while n_retries <= 3:
+            try:
+                activities = requests.get(url).json()
+
+                activities = [
+                    strava_client.models.api.StravaActivity.model_validate_json(act)
+                    for act in activities
+                ]
+
+                return activities  # Success - exit retry loop
+
+            except Exception as e:
+                n_retries += 1
+
+                if n_retries > 3:
+                    break
+                else:
+                    wait_time = 2**n_retries
+                    time.sleep(wait_time)
+
+    # If mocked data should be loaded, we proceed. Otherwise, we
+    # wait for the client to be ready
+    mo.stop(not client_ready and not load_mocked_activities)
+
+    if load_mocked_activities:
+        activities = _load_mocked_activities()
+    else:
+        # This should be optimized to load only necessary activities
+        activities = _fetch_activities()
+    return (activities,)
 
 
 @app.cell
 def _(datetime, mo, pd):
+    # == CONSTANTS ==
+
     min_date = "2025-01-01"
     max_date = datetime.datetime.today().strftime("%Y-%m-%d")
     get_start_date, set_start_date = mo.state(pd.to_datetime(min_date))
@@ -1012,11 +1004,10 @@ def _(datetime, mo, pd):
         value=get_end_date().strftime("%Y-%m-%d"),
         on_change=lambda x: set_end_date(pd.to_datetime(x)),
     )
-    return end_date, get_end_date, get_start_date, start_date
 
+    # Mocked data switch
+    use_mocked_data = mo.ui.switch(label="Use mocked data")
 
-@app.cell
-def _():
     days = {
         i + 1: d
         for i, d in enumerate(
@@ -1031,7 +1022,14 @@ def _():
             ]
         )
     }
-    return (days,)
+    return (
+        days,
+        end_date,
+        get_end_date,
+        get_start_date,
+        start_date,
+        use_mocked_data,
+    )
 
 
 @app.cell
@@ -1068,7 +1066,6 @@ async def _():
     import sys
     import requests
 
-
     _ = load_dotenv()
     return (
         alt,
@@ -1089,7 +1086,9 @@ async def _():
 
 @app.cell
 def _():
+    # Importing marimo alone should make loading the MD blocks faster
     import marimo as mo
+
     return (mo,)
 
 
