@@ -1043,8 +1043,10 @@ async def _():
     await micropip.install("python-dotenv")
 
     # Workaround to make it work with micropip
-    micropip.uninstall("typing-extensions", verbose=True)
-    await micropip.install("strava-client==1.0.5", verbose=True)
+    micropip.uninstall("typing-extensions")
+    micropip.uninstall("requests")
+
+    await micropip.install("strava-client==1.0.5")
     await micropip.install("polars")
 
     # =========================================================
