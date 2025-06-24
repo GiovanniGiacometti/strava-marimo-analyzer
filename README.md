@@ -12,7 +12,6 @@ A [Marimo](https://docs.marimo.io/) notebook for visualizing and analyzing your 
 
 ## ✨ Features
 
-The core feature of the dashboard is the Activity Heatmap, which visually represents the number of activities and total distance (in kilometers) over time.
 The core feature of the dashboard is the **Activity Heatmap**, which provides a visual representation of the number of activities and total distance (in kilometers) over time. This interactive heatmap also displays key statistics for the currently selected activities — such as total number of activities, total distance, and average speed.
 
 ![heatmap](images/heatmap.png)
