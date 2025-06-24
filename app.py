@@ -310,7 +310,7 @@ def _(
 
         Available plots 👇
 
-        ⏩ **Activity Focus**: explore the speed progression of your selected activities. Compare multiple ones side by side|
+        ⏩ **Activity Focus**: explore the speed progression of your selected activities. Compare multiple ones side by side!
 
         📊 **Speed**: see how your activity speeds are distributed.
 
@@ -899,7 +899,7 @@ def _(client, mo, requests, time):
             except Exception as e:
                 n_retries += 1
 
-                if n_retries > 3:
+                if n_retries > 5:
                     raise
                 else:
                     wait_time = 2**n_retries
