@@ -40,7 +40,7 @@ To begin, you'll need to authenticate your Strava account. The full process is e
 
 ### If you are running this notebook locally
 
-You can either provide your credentials through a .env file or set them directly in your terminal. When you run the notebook for the first time, a browser tab will open to authenticate your Strava account and retrieve an access token. All information are saved in a file called `.strava.secrets` file so you won’t need to re-authenticate in future sessions (make sure it is gitignored!).
+You can either provide your credentials through a .env file or set them directly in your terminal. When you run the notebook for the first time, a browser tab will open to authenticate your Strava account and retrieve an access token. All information are saved in a file called `.strava.secrets` file so you won’t need to re-authenticate in future sessions (make sure it is gitignored!). Notice that you can specify a parameter when instantiating the `StravaClient` to prevent saving the information.
 
 ### If you are using the web-based WASM version
 
