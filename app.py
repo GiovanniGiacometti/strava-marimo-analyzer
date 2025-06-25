@@ -863,7 +863,7 @@ def _(activities, pl):
 
 
 @app.cell
-def _(client, mo, requests, time):
+def _(client, json, mo, requests, time):
     # === ACTIVITY STREAM FUNCTION ===
     @mo.cache
     def fetch_activity_stream(activity_id: str, keys: list[str] | None = None):
@@ -894,7 +894,15 @@ def _(client, mo, requests, time):
         # Retry loop for current page
         while n_retries <= 3:
             try:
-                return requests.get(url).json()
+
+                # The response is quite big and the request often fails. Thus we set stream=True
+                response = requests.get(url, stream=True)
+                content = b""
+                for chunk in response.iter_content(chunk_size=8192):
+                    content += chunk
+                data = content.decode('utf-8')
+
+                return json.loads(data)
 
             except Exception as e:
                 n_retries += 1
@@ -1082,8 +1090,7 @@ async def _():
     micropip.uninstall("typing-extensions")
     micropip.uninstall("requests")
 
-    await micropip.install("strava-client==1.0.5")
-    await micropip.install("polars")
+    await micropip.install("strava-client")
 
     # =========================================================
 
@@ -1093,6 +1100,7 @@ async def _():
     import plotly.express as px
     import polars as pl
     import time
+    import json
 
     from dotenv import load_dotenv
 
@@ -1108,6 +1116,7 @@ async def _():
     return (
         alt,
         datetime,
+        json,
         math,
         np,
         pd,

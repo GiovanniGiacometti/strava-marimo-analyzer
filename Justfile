@@ -1,5 +1,7 @@
 # https://github.com/casey/just
 
+set quiet
+
 dev-sync:
     uv sync --all-extras --cache-dir .uv_cache
 
