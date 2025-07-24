@@ -24,7 +24,7 @@ In addition to the heatmap, the app includes three other visualizations that pro
 
 - **Distance Distribution**: an aggregated histogram that shows how the distances of the selected activities are distributed.
 
-- **Speed Distribution**: n aggregated histogram that displays the distribution of speeds across the selected activities.
+- **Speed Distribution**: an aggregated histogram that displays the distribution of speeds across the selected activities.
 
 I invite you to explore the dashboard [here](https://giovannigiacometti.it/strava-marimo-analyzer/) to see these visualizations in action!
 
